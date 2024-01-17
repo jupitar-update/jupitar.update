@@ -1,0 +1,480 @@
+1-------------------
+def aStarAlgo(start_node, stop_node):
+    open_set = set(start_node)
+    closed_set = set()
+    g = {}
+    parents = {}
+    g[start_node] = 0
+    parents[start_node] = start_node
+
+    while len(open_set) > 0:
+        n = None
+        for v in open_set:
+            if n == None or g[v] + heuristic(v) < g[n] + heuristic(n):
+                n = v
+        if n == stop_node or Graph_nodes[n] == None:
+            pass
+        else:
+            for (m, weight) in get_neighbors(n):
+                if m not in open_set and m not in closed_set:
+                    open_set.add(m)
+                    parents[m] = n
+                    g[m] = g[n] + weight
+                else:
+                    if g[m] > g[n] + weight:
+                        g[m] = g[n] + weight
+                        parents[m] = n
+                        if m in closed_set:
+                            closed_set.remove(m)
+                            open_set.add(m)
+        if n == None:
+            print('Path does not exist!')
+            return None
+
+        if n == stop_node:
+            path = []
+            while parents[n] != n:
+                path.append(n)
+                n = parents[n]
+            path.append(start_node)
+            path.reverse()
+            print('Path found: {}'.format(path))
+            return path
+
+        open_set.remove(n)
+        closed_set.add(n)
+
+    print('Path does not exist!')
+    return None
+
+
+def get_neighbors(v):
+    if v in Graph_nodes:
+        return Graph_nodes[v]
+    else:
+        return None
+
+
+def heuristic(n):
+    H_dist = {
+        'A': 11,
+        'B': 6,
+        'C': 99,
+        'D': 1,
+        'E': 7,
+        'G': 0,
+    }
+    return H_dist[n]
+
+
+Graph_nodes = {
+    'A': [('B', 2), ('E', 3)],
+    'B': [('A', 2), ('C', 1), ('G', 9)],
+    'C': [('B', 1)],
+    'D': [('E', 6), ('G', 1)],
+    'E': [('A', 3), ('D', 6)],
+    'G': [('B', 9), ('D', 1)]
+}
+aStarAlgo('A', 'G')
+
+2-----------------------
+def calc_cost(H, condition, weight=1):
+    cost = {}
+    if 'AND' in condition:
+        AND_nodes = condition['AND']
+        Path_A = ' AND '.join(AND_nodes)
+        PathA = sum(H[node] + weight for node in AND_nodes)
+        cost[Path_A] = PathA
+    if 'OR' in condition:
+        OR_nodes = condition['OR']
+        Path_B = ' OR '.join(OR_nodes)
+        PathB = min(H[node] + weight for node in OR_nodes)
+        cost[Path_B] = PathB
+    return cost
+
+
+def update_cost(H, Conditions, weight=1):
+    Main_nodes = list(Conditions.keys())
+    Main_nodes.reverse()
+    least_cost = {}
+    for key in Main_nodes:
+        condition = Conditions[key]
+        print(key, ':', Conditions[key], '>>>', calc_cost(H, condition, weight))
+        c = calc_cost(H, condition, weight)
+        H[key] = min(c.values())
+        least_cost[key] = calc_cost(H, condition, weight)
+    return least_cost
+
+
+def shortest_path(Start, Updated_cost, H):
+    Path = Start
+    if Start in Updated_cost.keys():
+        Min_cost = min(Updated_cost[Start].values())
+        key = list(Updated_cost[Start].keys())
+        values = list(Updated_cost[Start].values())
+        Index = values.index(Min_cost)
+        Next = key[Index].split()
+        if len(Next) == 1:
+            Start = Next[0]
+            Path += '<--' + shortest_path(Start, Updated_cost, H)
+        else:
+            Path += '<--(' + key[Index] + ') '
+            Start = Next[0]
+            Path += '[' + shortest_path(Start, Updated_cost, H) + ' + '
+            Start = Next[-1]
+            Path += shortest_path(Start, Updated_cost, H) + ']'
+    return Path
+
+
+H = {'A': -1, 'B': 5, 'C': 2, 'D': 4, 'E': 7, 'F': 9, 'G': 3, 'H': 0, 'I': 0, 'J': 0}
+Conditions = {
+    'A': {'OR': ['B'], 'AND': ['C', 'D']},
+    'B': {'OR': ['E', 'F']},
+    'C': {'OR': ['G'], 'AND': ['H', 'I']},
+    'D': {'OR': ['J']}
+}
+
+weight = 1
+
+print('Updated Cost :')
+Updated_cost = update_cost(H, Conditions, weight=1)
+print('*' * 75)
+print('Shortest Path :\n', shortest_path('A', Updated_cost, H))
+
+3--------------------------
+import numpy as p
+import pandas as pd
+import csv
+
+with open("enjoysport.csv") as f:
+    csv_file = csv.reader(f)
+    data = list(csv_file)
+
+    s = data[1][:-1]
+    g = [['?' for i in range(len(s))] for j in range(len(s))]
+
+    for i in data:
+        if i[-1] == "Yes":
+            for j in range(len(s)):
+                if i[j] != s[j]:
+                    s[j] = '?'
+                    g[j][j] = '?'
+
+        elif i[-1] == "No":
+            for j in range(len(s)):
+                if i[j] != s[j]:
+                    g[j][j] = s[j]
+                else:
+                    g[j][j] = "?"
+        print("\nSteps of Candidate Elimination Algorithm", data.index(i) + 1)
+        print(s)
+        print(g)
+    gh = []
+    for i in g:
+        for j in i:
+            if j != '?':
+                gh.append(i)
+                break
+    print("\nFinal specific hypothesis:\n", s)
+
+    print("\nFinal general hypothesis:\n", gh)
+4--------------------------
+import math
+import csv
+
+
+def load_csv(filename):
+    lines = csv.reader(open(filename, "r"));
+    dataset = list(lines)
+    headers = dataset.pop(0)
+    return dataset, headers
+
+
+class Node:
+    def __init__(self, attribute):
+        self.attribute = attribute
+        self.children = []
+        self.answer = ""
+
+
+def subtables(data, col, delete):
+    dic = {}
+    coldata = [row[col] for row in data]
+    attr = list(set(coldata))
+    for k in attr:
+        dic[k] = []
+
+    for y in range(len(data)):
+        key = data[y][col]
+        if delete:
+            del data[y][col]
+        dic[key].append(data[y])
+    return attr, dic
+
+
+def entropy(S):
+    attr = list(set(S))
+    if len(attr) == 1:
+        return 0
+
+    counts = [0, 0]
+    for i in range(2):
+        counts[i] = sum([1 for x in S if attr[i] == x]) / (len(S) * 1.0)
+
+    sums = 0
+    for cnt in counts:
+        sums += -1 * cnt * math.log(cnt, 2)
+    return sums
+
+
+def compute_gain(data, col):
+    attValues, dic = subtables(data, col, delete=False)
+    total_entropy = entropy([row[-1] for row in data])
+    for x in range(len(attValues)):
+        ratio = len(dic[attValues[x]]) / (len(data) * 1.0)
+        entro = entropy([row[-1] for row in dic[attValues[x]]])
+        total_entropy -= ratio * entro
+
+    return total_entropy
+
+
+def build_tree(data, features):
+    lastcol = [row[-1] for row in data]
+    if (len(set(lastcol))) == 1:
+        node = Node("")
+        node.answer = lastcol[0]
+        return node
+
+    n = len(data[0]) - 1
+    gains = [compute_gain(data, col) for col in range(n)]
+
+    split = gains.index(max(gains))
+    node = Node(features[split])
+    fea = features[:split] + features[split + 1:]
+
+    attr, dic = subtables(data, split, delete=True)
+    for x in range(len(attr)):
+        child = build_tree(dic[attr[x]], fea)
+        node.children.append((attr[x], child))
+
+    return node
+
+
+def print_tree(node, level):
+    if node.answer != "":
+        print("     " * level, node.answer)
+        return
+
+    print("       " * level, node.attribute)
+    for value, n in node.children:
+        print("     " * (level + 1), value)
+        print_tree(n, level + 2)
+
+
+# def classify(node, x_test, features):
+#     if node.answer != "":
+#         print(node.answer)
+#         return
+#
+#     pos = features.index(node.attribute)
+#     for value, n in node.children:
+#         if x_test[pos] == value:
+#             classify(n, x_test, features)
+
+
+dataset, features = load_csv("tennisdata.csv")
+node = build_tree(dataset, features)
+
+print("The decision tree for the dataset using ID3 algorithm is ")
+print_tree(node, 0)
+
+# testdata, features = load_csv("tennisdata.csv")
+# for xtest in testdata:
+#     print("The test instance : ", xtest)
+#     print("The predicted label : \n", end=" ")
+#     classify(node, xtest, features)
+5------------------------
+import numpy as np
+
+X = np.array(([2, 9], [1, 5], [3, 6]), dtype=float)
+y = np.array(([92], [86], [89]), dtype=float)
+X = X / np.amax(X, axis=0)
+y = y / 100
+
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def derivatives_sigmoid(x):
+    return x * (1 - x)
+
+
+epoch = 5
+lr = 0.1
+inputlayer_neurons = 2
+hiddenlayer_neurons = 3
+output_neurons = 1
+
+wh = np.random.uniform(size=(inputlayer_neurons, hiddenlayer_neurons))
+bh = np.random.uniform(size=(1, hiddenlayer_neurons))
+wout = np.random.uniform(size=(hiddenlayer_neurons, output_neurons))
+bout = np.random.uniform(size=(1, output_neurons))
+
+for i in range(epoch):
+    hinp1 = np.dot(X, wh)
+    hinp = hinp1 + bh
+    hlayer_act = sigmoid(hinp)
+    outinp1 = np.dot(hlayer_act, wout)
+    outinp = outinp1 + bout
+    output = sigmoid(outinp)
+
+    EO = y - output
+    outgrad = derivatives_sigmoid(output)
+    d_output = EO * outgrad
+    EH = d_output.dot(wout.T)
+    hiddengrad = derivatives_sigmoid(hlayer_act)
+    d_hiddenlayer = EH * hiddengrad
+
+    wout += hlayer_act.T.dot(d_output) * lr
+    wh += X.T.dot(d_hiddenlayer) * lr
+
+    print("-----------Epoch-", i + 1, "Starts----------")
+    print("Input: \n" + str(X))
+    print("Actual Output: \n" + str(y))
+    print("Predicted Output: \n", output)
+    print("-----------Epoch-", i + 1, "Ends----------\n")
+
+print("Input: \n" + str(X))
+print("Actual Output: \n" + str(y))
+print("Predicted Output: \n", output)
+6------------------------------------
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn import metrics
+
+df=pd.read_csv('pima_indian.csv')
+feature_col_names = ['num_preg', 'glucose_conc', 'diastolic_bp', 'thickness', 'insulin', 'bmi', 'diab_pred', 'age']
+predicted_class_names =['diabetes']
+X=df[feature_col_names].values
+y=df[predicted_class_names].values
+
+Xtrain, Xtest, ytrain, ytest=train_test_split(X, y, test_size=0.33)
+print ('\n the total number of Training Data:',ytrain.shape)
+print ('\n the total number of Test Data:',ytest.shape)
+
+clf=GaussianNB().fit (Xtrain, ytrain.ravel())
+predicted=clf.predict(Xtest)
+predictTestData=clf.predict([[6,140,72,35,0,33.6,0.627,50]])
+print('\n Confusion matrix')
+print(metrics.confusion_matrix(ytest, predicted))
+print('\n Accuracy of the classifier is:', metrics.accuracy_score (ytest, predicted)*100)
+print('\n The value of Precision', metrics.precision_score (ytest, predicted))
+print('\n The value of Recall', metrics.recall_score (ytest, predicted))
+print("Predicted Value for individual Test Data:", predictTestData)
+7---------------------
+from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
+import sklearn.metrics as metrics
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+names = ['Sepal_Length', 'Sepal_Width', 'Petal_Length', 'Petal_Width', 'Class']
+dataset = pd.read_csv("kmean.csv", names=names)
+X = dataset.iloc[:, :-1]
+label = {'Iris-setosa': 0, 'Iris-versicolor': 1, 'Iris-virginica': 2}
+y = [label[c] for c in dataset.iloc[:, -1]]
+plt.figure(figsize=(14, 7))
+colormap = np.array(['red', 'lime', 'black'])
+# REAL PLOT
+plt.subplot(1, 3, 1)
+plt.title('Real')
+plt.scatter(X.Petal_Length, X.Petal_Width, c=colormap[y])
+# K-PLOT
+model = KMeans(n_clusters=3, random_state=0).fit(X)
+plt.subplot(1, 3, 2)
+plt.title('KMeans')
+plt.scatter(X.Petal_Length, X.Petal_Width, c=colormap[model.labels_])
+print('The accuracy score of K-Mean: ', metrics.accuracy_score(y, model.labels_))
+print('The Confusion matrixof K-Mean:\n', metrics.confusion_matrix(y, model.labels_))
+# GMM PLOT
+gmm = GaussianMixture(n_components=3, random_state=0).fit(X)
+y_cluster_gmm = gmm.predict(X)
+plt.subplot(1, 3, 3)
+plt.title('GMM Classification')
+plt.scatter(X.Petal_Length, X.Petal_Width, c=colormap[y_cluster_gmm])
+print('The accuracy score of EM: ', metrics.accuracy_score(y, y_cluster_gmm))
+print('The Confusion matrix of EM:\n ', metrics.confusion_matrix(y, y_cluster_gmm))
+8------------------------
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import classification_report,confusion_matrix
+from sklearn import datasets
+
+iris=datasets.load_iris()
+
+x=iris.data
+y=iris.target
+print ('sepal-length', 'sepal-width', 'petal-length', 'petal-width')
+print(x)
+print('class: O-Iris-Setosa,1-Iris-Versicolour, 2- Iris-Virginica')
+print(y)
+
+x_train, x_test, y_train, y_test=train_test_split(x, y, test_size=0.3)
+
+#To Training the model and Nearest nighbors K=5
+classifier=KNeighborsClassifier(n_neighbors=5)
+classifier.fit(x_train, y_train)
+
+y_pred=classifier.predict(x_test)
+print('Confusion Matrix')
+print (confusion_matrix(y_test,y_pred))
+print('Accuracy Metrics')
+print (classification_report (y_test, y_pred))
+9--------------------------------
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+def kernel(point, xmat, k):
+    m,n = np.shape(xmat)
+    weights = np.mat(np.eye((m)))
+    for j in range(m):
+        diff = point - X[j]
+        weights[j,j] = np.exp(diff*diff.T/(-2.0*k**2))
+    return weights
+
+def localWeight(point, xmat, ymat, k):
+    wei = kernel(point,xmat,k)
+    W = (X.T*(wei*X)).I*(X.T*(wei*ymat.T))
+    return W
+
+def localWeightRegression(xmat, ymat, k):
+    m,n = np.shape(xmat)
+    ypred = np.zeros(m)
+    for i in range(m):
+        ypred[i] = xmat[i]*localWeight(xmat[i],xmat,ymat,k)
+    return ypred
+
+data = pd.read_csv('regression.csv')
+bill = np.array(data.total_bill)
+tip = np.array(data.tip)
+
+mbill = np.mat(bill)
+mtip = np.mat(tip)
+m= np.shape(mbill)[1]
+one = np.mat(np.ones(m))
+X = np.hstack((one.T,mbill.T))
+
+ypred = localWeightRegression(X,mtip,0.5)
+SortIndex = X[:,1].argsort(0)
+xsort = X[SortIndex][:,0]
+fig = plt.figure()
+ax = fig.add_subplot(1,1,1)
+ax.scatter(bill,tip, color='green')
+ax.plot(xsort[:,1],ypred[SortIndex], color = 'red', linewidth=5)
+plt.xlabel('Total bill')
+plt.ylabel('Tip')
+plt.show();
